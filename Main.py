@@ -1,7 +1,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from os import environ
 
+def suppress_qt_warnings():
+    environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+    environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+    environ["QT_SCALE_FACTOR"] = "1"
+
+suppress_qt_warnings()
 def Mean(LST,Duplicate,MathData):
     LSTNoDate = LST.drop_duplicates(subset=[Duplicate])
     LSTAverage = []
@@ -13,58 +21,64 @@ def Mean(LST,Duplicate,MathData):
 def SplitData(LST,Column,Splitter):
     m = LST[Column] != Splitter
     return LST[~m] 
-
-GlobalVariable = {
-    "Data":pd.read_csv(f'dataset.csv'),
-    "XovidPositive": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}},
-    "XovidNegative": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}},
-    }
-GlobalVariable["Data"].drop(columns="Unnamed: 10", inplace = True)
-GlobalVariable["Data"]['date of test'] = pd.to_datetime(GlobalVariable["Data"]['date of test'])
-GlobalVariable["Data"].dropna(subset=['date of test'], inplace = True)
-for x in GlobalVariable["Data"].index:
-    if GlobalVariable["Data"].loc[x, "education level"] == "NA":
-            GlobalVariable["Data"].drop(x, inplace = True)
-    elif GlobalVariable["Data"].loc[x, "efficacy of technique used"] > 100:
-        GlobalVariable["Data"].loc[x, "efficacy of technique used"] = 100
+def grabAndClean():
+    GlobalVariable = {
+        "Data":pd.read_csv(f'dataset.csv'),
+        "XovidPositive": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}},
+        "XovidNegative": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}}}
+    print(GlobalVariable["Data"].describe())
+    GlobalVariable["Data"].drop(columns=["nhs number","drug used during test","Unnamed: 10"], inplace = True)
+    GlobalVariable["Data"]['date of test'] = pd.to_datetime(GlobalVariable["Data"]['date of test'])
+    GlobalVariable["Data"].dropna(subset=['date of test'], inplace = True)
+    for x in GlobalVariable["Data"].index:
+        if GlobalVariable["Data"].loc[x, "education level"] == "NA":
+                GlobalVariable["Data"].drop(x, inplace = True)
+        elif GlobalVariable["Data"].loc[x, "efficacy of technique used"] > 100:
+            GlobalVariable["Data"].loc[x, "efficacy of technique used"] = 100
     
-GlobalVariable["XovidPositive"]["Data"] = SplitData(GlobalVariable["Data"],"XoviD21 result","true")
-GlobalVariable["XovidNegative"]["Data"] = SplitData(GlobalVariable["Data"],"XoviD21 result","false")
-GlobalVariable["XovidPositive"]["TechniqueX"]["Data"] = SplitData(GlobalVariable["XovidPositive"]["Data"],"technique used","X")
-GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"] = SplitData(GlobalVariable["XovidPositive"]["Data"],"technique used","ZERO")
-GlobalVariable["XovidNegative"]["TechniqueX"]["Data"] = SplitData(GlobalVariable["XovidNegative"]["Data"],"technique used","X")
-GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"] = SplitData(GlobalVariable["XovidNegative"]["Data"],"technique used","ZERO")
+    populateVariable(GlobalVariable,"XovidPositive","true")
+    populateVariable(GlobalVariable,"XovidNegative","false")
+    plot(GlobalVariable)
+def populateVariable(GlobalVariable,Direction,bool):
+    print(Direction,bool)
+    GlobalVariable[Direction]["Data"] = SplitData(GlobalVariable["Data"],"XoviD21 result",bool)
+    q1 = int(GlobalVariable[Direction]["Data"].quantile(0.10))
+    q2 = int(GlobalVariable[Direction]["Data"].quantile(0.75))
+    print(q1," ",q2)
+    print(GlobalVariable[Direction]["Data"].describe())
+    for x in GlobalVariable[Direction]["Data"].index:
+        if GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] > q2 or GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] < q1:
+           GlobalVariable[Direction]["Data"].drop(x, inplace = True)
+    GlobalVariable[Direction]["TechniqueX"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used","X")
+    GlobalVariable[Direction]["TechniqueZERO"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used","ZERO")
+    GlobalVariable[Direction]["TechniqueX"]["Mean"] = Mean(GlobalVariable[Direction]["TechniqueX"]["Data"],"date of test","efficacy of technique used")
+    GlobalVariable[Direction]["TechniqueZERO"]["Mean"] = Mean(GlobalVariable[Direction]["TechniqueZERO"]["Data"],"date of test","efficacy of technique used")
+    
 
-GlobalVariable["XovidPositive"]["TechniqueX"]["Mean"] = Mean(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"],"date of test","efficacy of technique used")
-GlobalVariable["XovidPositive"]["TechniqueZERO"]["Mean"] = Mean(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"],"date of test","efficacy of technique used")
-GlobalVariable["XovidNegative"]["TechniqueX"]["Mean"] = Mean(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"],"date of test","efficacy of technique used")
-GlobalVariable["XovidNegative"]["TechniqueZERO"]["Mean"] = Mean(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"],"date of test","efficacy of technique used")
-#ZERO, X = SplitData(Data,'technique used',"X")
-print(GlobalVariable["XovidPositive"]["TechniqueX"]["Mean"])
-print("------------------------------------------------------")
-print(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Mean"])
-print("------------------------------------------------------")
-print(GlobalVariable["XovidNegative"]["TechniqueX"]["Mean"])
-print("------------------------------------------------------")
-print(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Mean"])
-print("------------------------------------------------------")
+def plot(GlobalVariable):
+    plt.scatter(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["efficacy of technique used"], label = "Xovid Positive with X")
+    plt.scatter(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["efficacy of technique used"], label = "Xovid Positive with ZERO")
+    plt.scatter(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"]["date of test"], GlobalVariable["XovidNegative"]["TechniqueX"]["Data"]["efficacy of technique used"], label = "Xovid Negative with X")
+    plt.scatter(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"]["date of test"], GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"]["efficacy of technique used"], label = "Xovid Negative with ZERO")
+    plt.legend()
+    plt.ylabel('efficacy of technique used')
+    plt.xlabel('Date of Test')
+    
+    plt.show()
+    printStats(GlobalVariable)
+def printStats(GlobalVariable):
+    print(f'All: {len(GlobalVariable["Data"])}')
+    print(f'Tested Positive: {len(GlobalVariable["XovidPositive"]["Data"])}')
+    print(f'Tested Negative: {len(GlobalVariable["XovidNegative"]["Data"])}')
+    print(f'Difference between p/n: {len(GlobalVariable["XovidPositive"]["Data"]) - len(GlobalVariable["XovidNegative"]["Data"])}')
+    print(f'Tested Positive X: {len(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"])}')
+    print(f'Tested Positive ZERO: {len(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"])}')
+    print(f'Difference between pX/PZERO: {len(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]) - len(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"])}')
+    print(f'Tested Negative X: {len(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"])}')
+    print(f'Tested Negative ZERO: {len(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"])}')
+    print(f'Difference between nX/nZERO: {len(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"]) - len(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"])}')
+    print(f'Difference between pX/nX: {len(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]) - len(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"])}')
+    print(f'Difference between pZERO/nZERO: {len(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]) - len(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"])}')
+    print(f'Percentage of Degrees with positive: {round(len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))/len(GlobalVariable["XovidPositive"]["Data"])*100,2)}%')
 
-plt.scatter(GlobalVariable["XovidPositive"]["TechniqueX"]["Mean"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueX"]["Mean"]["efficacy of technique used"], label = "Xovid Positive with X")
-plt.scatter(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Mean"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueZERO"]["Mean"]["efficacy of technique used"], label = "Xovid Positive with ZERO")
-plt.scatter(GlobalVariable["XovidNegative"]["TechniqueX"]["Mean"]["date of test"], GlobalVariable["XovidNegative"]["TechniqueX"]["Mean"]["efficacy of technique used"], label = "Xovid Negative with X")
-plt.scatter(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Mean"]["date of test"], GlobalVariable["XovidNegative"]["TechniqueZERO"]["Mean"]["efficacy of technique used"], label = "Xovid Negative with ZERO")
-plt.legend(loc='upper left')
-
-'''
-ZEROAverage = Mean(SplitData(Data,'technique used',"ZERO"),"date of test","efficacy of technique used")
-
-plt.plot(ZEROAverage["date of test"], ZEROAverage["efficacy of technique used"], '.') # plots those points, meaning you can go plot more points over it
-
-XAverage = Mean(SplitData(Data,'technique used',"X"),"date of test","efficacy of technique used")
-
-plt.plot(XAverage["date of test"], XAverage["efficacy of technique used"], '.')
-
-
-plt.show()
-'''
-plt.show()
+grabAndClean()
