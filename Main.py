@@ -49,10 +49,10 @@ def populateVariable(GlobalVariable,Direction,bool):
     for x in GlobalVariable[Direction]["Data"].index:
         if GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] > q2 or GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] < q1:
            GlobalVariable[Direction]["Data"].drop(x, inplace = True)
-    GlobalVariable[Direction]["TechniqueX"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used","X")
-    GlobalVariable[Direction]["TechniqueZERO"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used","ZERO")
-    GlobalVariable[Direction]["TechniqueX"]["Mean"] = Mean(GlobalVariable[Direction]["TechniqueX"]["Data"],"date of test","efficacy of technique used")
-    GlobalVariable[Direction]["TechniqueZERO"]["Mean"] = Mean(GlobalVariable[Direction]["TechniqueZERO"]["Data"],"date of test","efficacy of technique used")
+    for a in ["X","ZERO"]:
+        print(f"Technique{a}")
+        GlobalVariable[Direction][f"Technique{a}"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used",a)
+        GlobalVariable[Direction][f"Technique{a}"]["Mean"] = Mean(GlobalVariable[Direction][f"Technique{a}"]["Data"],"date of test","efficacy of technique used")
     
 
 def plot(GlobalVariable):
