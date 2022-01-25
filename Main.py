@@ -80,5 +80,16 @@ def printStats(GlobalVariable):
     print(f'Difference between pX/nX: {len(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]) - len(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"])}')
     print(f'Difference between pZERO/nZERO: {len(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]) - len(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"])}')
     print(f'Percentage of Degrees with positive: {round(len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))/len(GlobalVariable["XovidPositive"]["Data"])*100,2)}%')
+    a = len(SplitData(GlobalVariable["Data"],"education level","PhD"))
+    b = len(SplitData(GlobalVariable["Data"],"education level","BsC"))
+    c = len(GlobalVariable["Data"])
+    d = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))
+    e = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","BsC"))
+    f = len(GlobalVariable["XovidPositive"]["Data"])
+    a = round(((a + b) / c)*100,2)#amount of people with a phd or bsc overall
+    b = round(((d + e)/f)*100,2)
+    c = round(f / c)*100,2)
+    total = (a*b)/c
+    print(total)
 
 grabAndClean()
