@@ -92,5 +92,12 @@ def printStats(GlobalVariable):
     '''
     total = (a*b)/c
     print(f"{round(total*100,2)}%")
+    '''
+    P(amount of students over 6ft knowing they are over 18)*P(amount of a student over 6ft)/P(Amount of students over 18) = P(amount of students over 18 knowing they are over 6ft)
+    A=amount of students over 6ft
+    B= students over 18
+
+    P(A|B)*P(A)/P(B)=P(B|A)
+    '''
 
 grabAndClean()
