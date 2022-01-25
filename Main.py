@@ -26,7 +26,6 @@ def grabAndClean():
         "Data":pd.read_csv(f'dataset.csv'),
         "XovidPositive": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}},
         "XovidNegative": {"Data":"","TechniqueX":{"Data":"","Mean":""},"TechniqueZERO":{"Data":"","Mean":""}}}
-    print(GlobalVariable["Data"].describe())
     GlobalVariable["Data"].drop(columns=["nhs number","drug used during test","Unnamed: 10"], inplace = True)
     GlobalVariable["Data"]['date of test'] = pd.to_datetime(GlobalVariable["Data"]['date of test'])
     GlobalVariable["Data"].dropna(subset=['date of test'], inplace = True)
@@ -40,17 +39,13 @@ def grabAndClean():
     populateVariable(GlobalVariable,"XovidNegative","false")
     plot(GlobalVariable)
 def populateVariable(GlobalVariable,Direction,bool):
-    print(Direction,bool)
     GlobalVariable[Direction]["Data"] = SplitData(GlobalVariable["Data"],"XoviD21 result",bool)
     q1 = int(GlobalVariable[Direction]["Data"].quantile(0.10))
     q2 = int(GlobalVariable[Direction]["Data"].quantile(0.75))
-    print(q1," ",q2)
-    print(GlobalVariable[Direction]["Data"].describe())
     for x in GlobalVariable[Direction]["Data"].index:
         if GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] > q2 or GlobalVariable[Direction]["Data"].loc[x, "efficacy of technique used"] < q1:
            GlobalVariable[Direction]["Data"].drop(x, inplace = True)
     for a in ["X","ZERO"]:
-        print(f"Technique{a}")
         GlobalVariable[Direction][f"Technique{a}"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used",a)
         GlobalVariable[Direction][f"Technique{a}"]["Mean"] = Mean(GlobalVariable[Direction][f"Technique{a}"]["Data"],"date of test","efficacy of technique used")
     
@@ -82,14 +77,20 @@ def printStats(GlobalVariable):
     print(f'Percentage of Degrees with positive: {round(len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))/len(GlobalVariable["XovidPositive"]["Data"])*100,2)}%')
     a = len(SplitData(GlobalVariable["Data"],"education level","PhD"))
     b = len(SplitData(GlobalVariable["Data"],"education level","BsC"))
-    c = len(GlobalVariable["Data"])
-    d = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))
-    e = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","BsC"))
+    c = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","PhD"))
+    d = len(SplitData(GlobalVariable["XovidPositive"]["Data"],"education level","BsC"))
+    e = len(GlobalVariable["Data"])
+    
     f = len(GlobalVariable["XovidPositive"]["Data"])
-    a = round(((a + b) / c)*100,2)#amount of people with a phd or bsc overall
-    b = round(((d + e)/f)*100,2)
-    c = round(f / c)*100,2)
+    a = ((a + b) / e)*100
+    b = ((c + d)/e)*100
+    c = (e / f)*100
+    '''
+    P(a) is Probability of having phd or bsc = 10%
+    P(b|a) is Probability of testing positive, given that they have a phd or bsc happens = 50%
+    P(c) is Probability of testing positive = 40%
+    '''
     total = (a*b)/c
-    print(total)
+    print(f"{round(total*100,2)}%")
 
 grabAndClean()
