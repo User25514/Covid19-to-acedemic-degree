@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from os import environ
+from pandas_profiling import ProfileReport
+import sweetviz as sv
 
 def suppress_qt_warnings():
     environ["QT_DEVICE_PIXEL_RATIO"] = "0"
@@ -37,7 +39,12 @@ def grabAndClean():
     
     populateVariable(GlobalVariable,"XovidPositive","true")
     populateVariable(GlobalVariable,"XovidNegative","false")
-    plot(GlobalVariable)
+    profile = ProfileReport(GlobalVariable["Data"], title='Worker Report')
+    profile
+    profile.to_file("worker_report.html")
+    my_report = sv.analyze(GlobalVariable["Data"])
+    my_report.show_html()
+    Scatterplot(GlobalVariable)
 def populateVariable(GlobalVariable,Direction,bool):
     GlobalVariable[Direction]["Data"] = SplitData(GlobalVariable["Data"],"XoviD21 result",bool)
     q1 = int(GlobalVariable[Direction]["Data"].quantile(0.10))
@@ -50,7 +57,7 @@ def populateVariable(GlobalVariable,Direction,bool):
         GlobalVariable[Direction][f"Technique{a}"]["Mean"] = Mean(GlobalVariable[Direction][f"Technique{a}"]["Data"],"date of test","efficacy of technique used")
     
 
-def plot(GlobalVariable):
+def Scatterplot(GlobalVariable):
     plt.scatter(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["efficacy of technique used"], label = "Xovid Positive with X")
     plt.scatter(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["efficacy of technique used"], label = "Xovid Positive with ZERO")
     plt.scatter(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"]["date of test"], GlobalVariable["XovidNegative"]["TechniqueX"]["Data"]["efficacy of technique used"], label = "Xovid Negative with X")
