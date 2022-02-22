@@ -108,3 +108,13 @@ def printStats(GlobalVariable):
     '''
 
 grabAndClean()
+"""
+cases = 10000
+zeroTrust = 1000/cases
+print(f"Probability {zeroTrust}%")
+trojanInfections = 3000/cases
+print(f"Probability {trojanInfections}%")
+trojanInfectionsZeroTrust = 20/cases
+print(f"Probability {trojanInfectionsZeroTrust}%")
+print(f"Probability {(trojanInfectionsZeroTrust*zeroTrust)/trojanInfections}%")
+"""
