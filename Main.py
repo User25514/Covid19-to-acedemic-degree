@@ -56,7 +56,11 @@ def populateVariable(GlobalVariable,Direction,bool):
         GlobalVariable[Direction][f"Technique{a}"]["Data"] = SplitData(GlobalVariable[Direction]["Data"],"technique used",a)
         GlobalVariable[Direction][f"Technique{a}"]["Mean"] = Mean(GlobalVariable[Direction][f"Technique{a}"]["Data"],"date of test","efficacy of technique used")
     
-
+def Distribution(GlobalVariable):
+    Positive_TechniqueX = {"Length":len(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"])}
+    Positive_TechniqueZero = {"Length":len(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"])}
+    Negative_TechniqueX = {"Length":len(GlobalVariable["XovidNegative"]["TechniqueX"]["Data"])}
+    Negative_TechniqueZero = {"Length":len(GlobalVariable["XovidNegative"]["TechniqueZERO"]["Data"])}
 def Scatterplot(GlobalVariable):
     plt.scatter(GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueX"]["Data"]["efficacy of technique used"], label = "Xovid Positive with X")
     plt.scatter(GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["date of test"], GlobalVariable["XovidPositive"]["TechniqueZERO"]["Data"]["efficacy of technique used"], label = "Xovid Positive with ZERO")
